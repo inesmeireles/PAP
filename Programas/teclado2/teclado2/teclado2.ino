@@ -4,7 +4,7 @@
 
 #define Password_Length 5
 
-int signalPin = 12;
+int signalPin = 13;
 
 char Data[Password_Length];
 char Master[Password_Length] = "1234";

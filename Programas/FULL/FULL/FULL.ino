@@ -1,45 +1,110 @@
+//teclado 
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <Keypad.h>
 
- 
+//Programa: Sistema de trava eletrica com RFID
 #include <SPI.h>
 #include <MFRC522.h>
-#include <LiquidCrystal.h>
- 
+
+#define Password_Length 5
+
+//RFID
 #define SS_PIN 53
 #define RST_PIN 5
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
-  
-//rele
+
 int signalPin = 13;
 
+char Data[Password_Length];
+char Master[Password_Length] = "1234";
 byte data_count = 0, master_count = 0;
+bool Pass_is_good;
+char customKey;
 
-char st[20];
 
-void setup() 
-{
-  Serial.begin(9600);   // Inicia a serial
+const byte ROWS = 4;
+const byte COLS = 3;
+
+char hexaKeys[ROWS][COLS] = {
+  {'1','2','3'},
+  {'4','5','6'},
+  {'7','8','9'},
+  {'*','0','#'}
+};
+
+byte colPins[COLS] = {5, 4, 3}; //connect col pins
+byte rowPins[ROWS] = {9, 8, 7, 6}; //connect row pins
+
+Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
+
+LiquidCrystal_I2C lcd(0x20, 16, 2);  
+
+void setup(){
+  //teclado
+  Serial.begin(9600);
+  lcd.backlight();
+
+  //rfid
   SPI.begin();      // Inicia  SPI bus
-  pinMode(signalPin, OUTPUT);
   mfrc522.PCD_Init();   // Inicia MFRC522
   Serial.println("Aproxime o seu cartao do leitor...");
-  Serial.println();  
-}
+  Serial.println();
  
-void loop() 
-{
-  rfid();
+  pinMode(signalPin, OUTPUT);
 }
 
-int rfid() {
-  // Look for new cards
+void loop(){
+  rfid();
+  teclado();
+}
+
+void teclado()
+{
+  lcd.setCursor(3,0);
+  lcd.print("Enter Password:");
+
+  customKey = customKeypad.getKey();
+  if (customKey){
+    Serial.print ("Key pressed: ");
+    Serial.println(customKey);
+    Data[data_count] = customKey;
+    lcd.setCursor(data_count,1);
+    lcd.print(Data[data_count]);
+    data_count++;
+    }
+
+  if(data_count == Password_Length-1){
+    lcd.clear();
+
+    if(!strcmp(Data, Master)){
+      lcd.print("Correct");
+      Serial.print("Correct");
+      digitalWrite(signalPin, HIGH);
+      delay(5000);
+      digitalWrite(signalPin, LOW);
+      }
+    else{
+      lcd.print("Incorrect");
+      Serial.print("Incorrect");
+      delay(1000);
+      }
+   
+    lcd.clear();
+    clearData();  
+  }  
+}
+void rfid()
+{
+  // Procura por cartao RFID
   if ( ! mfrc522.PICC_IsNewCardPresent()) 
   {
-    return 0;
+    return;
   }
-  // Select one of the cards
+  // Seleciona o cartao RFID
   if ( ! mfrc522.PICC_ReadCardSerial()) 
   {
-    return 0;
+    return;
   }
   //Mostra UID na serial
   Serial.print("UID da tag :");
@@ -55,24 +120,19 @@ int rfid() {
   Serial.println();
   Serial.print("Mensagem : ");
   conteudo.toUpperCase();
-  if (conteudo.substring(1) == "2B 82 22 1B") //UID 1 - Chaveiro
-  {
-    Serial.println("lock opened");
-    digitalWrite(signalPin, HIGH);
-    delay(1000);
-    digitalWrite(signalPin, LOW);
-    Serial.println();  
-    loop();
-  }
-  
  
-  if (conteudo.substring(1) == "27 9B 01 3C") //UID 2 - Cartao
+  if (conteudo.substring(1) == "2B 82 22 1B") //UID 1 - Cartao
   {
-    Serial.println("lock opened");
-    //digitalWrite(signalPin, HIGH);
-    delay(1000);
-    //digitalWrite(signalPin, LOW);
-    Serial.println(); 
-    loop();
-  }  
+    Serial.println("Ola FILIPEFLOP !");
+    Serial.println();
+    digitalWrite(13, HIGH); // ativa rele, abre a trava solenoide
+    delay(3000);           // espera 3 segundos
+    digitalWrite(13, LOW);  // desativa rele, fecha a trava solenoide
+  }   
+}
+void clearData(){
+  while(data_count !=0){
+    Data[data_count--] = 0;
+  }
+  return;
 }
