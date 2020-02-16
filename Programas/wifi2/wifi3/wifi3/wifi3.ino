@@ -1,273 +1,94 @@
-#include "ConnectThings_ESP8266.h"
-#include "Arduino.h"
-#include "SoftwareSerial.h"
+#include <ESP8266WiFi.h>
+#include <MySQL_Connection.h>
+#include <MySQL_Cursor.h>
+#include <stdlib.h>     /* atol */
 
-Wifi::Wifi(SoftwareSerial &_esp8266): esp8266(&_esp8266)
+byte mac_addr[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
+
+IPAddress server_addr(192,168,1,73);  // IP of the MySQL *server* here
+char user[] = "arduino";              // MySQL user login username
+char password[] = "12345678";        // MySQL user login password
+int pin = 2;
+
+int electronic_lock = 12;  //relay pin
+
+char query[] = "select CONVERT(CASE WHEN a.pin is null THEN 0 ELSE 1 END ,UNSIGNED INTEGER) AS pin FROM  arduino.customer_login b left join arduino.registos a on a.pin = b.pin AND b.date_in between a.start_date and a.end_date WHERE b.new = 1 LIMIT 1";
+char queryUPD[] = "UPDATE arduino.customer_login SET new = 0 WHERE new = 1";
+
+WiFiClient client;
+MySQL_Connection conn((Client *)&client);
+
+void setup()
 {
-    esp8266->begin(9600);
-    rx_empty();
+  pinMode(12, OUTPUT); //Relay
+  Serial.begin(115200);
+  Serial.println();
 
-}
+  WiFi.begin("Casa_Santa_Teresinha", "teresinha");
 
-
-
-String Wifi::recvString(String target, uint32_t timeout=10000)
-{
-    String data;
-    char a;
-    unsigned long start = millis();
-    while (millis() - start < timeout) {
-        while(esp8266->available() > 0) {
-            a = esp8266->read();
-      if(a == '\0') continue;
-            data += a;
-        }
-        if (data.indexOf(target) != -1) {
-            break;
-        }   
-    }
-    return data;
-}
-
-String Wifi::recvString(String target1, String target2, uint32_t timeout=10000)
-{
-    String data;
-    char a;
-    unsigned long start = millis();
-    bool isTimeout = true;
-    while (millis() - start < timeout) {
-        while(esp8266->available() > 0) {
-            a = esp8266->read();
-            if(a == '\0') continue;
-            data += a;
-        }
-        if (data.indexOf(target1) != -1) {
-            isTimeout = false;
-            break;
-        } else if (data.indexOf(target2) != -1) {
-            isTimeout = false;
-            break;
-        }
-    }
-    if(isTimeout){
-      Serial.println("**TIMEOUT OCCURRED. Timeout " + String(timeout) + " was insufficient");
-    }
-    return data;
-}
-
-String Wifi::recvString(String target1, String target2, String target3, uint32_t timeout=10000)
-{
-    String data;
-    char a;
-    unsigned long start = millis();
-    while (millis() - start < timeout) {
-        while(esp8266->available() > 0) {
-            a = esp8266->read();
-            if(a == '\0') continue;
-            data += a;
-        }
-        if (data.indexOf(target1) != -1) {
-            Serial.println("saiu " + target1);
-            break;
-        } else if (data.indexOf(target2) != -1) {
-            Serial.println("saiu " + target2);
-            break;
-        } else if (data.indexOf(target3) != -1) {
-            Serial.println("saiu " + target3);
-            break;
-        }
-    }
-    return data;
-}
-
-
-bool Wifi::recvFind(String target, uint32_t timeout)
-{
-    String data_tmp;
-    data_tmp = recvString(target, timeout);
-    if (data_tmp.indexOf(target) != -1) {
-        return true;
-    }
-    return false;
-}
-
-bool Wifi::recvFindAndFilter(String target, String begin, String end, String &data, uint32_t timeout = 10000)
-{
-    String data_tmp;
-    data_tmp = recvString(target, timeout);
-    if (data_tmp.indexOf(target) != -1) {
-        int32_t index1 = data_tmp.indexOf(begin);
-        int32_t index2 = data_tmp.indexOf(end);
-        if (index1 != -1 && index2 != -1) {
-            index1 += begin.length();
-            data = data_tmp.substring(index1, index2);
-            return true;
-        }
-    }
-    data = "";
-    return false;
-}
-
-
-void Wifi::rx_empty(void) 
-{
-    while(esp8266->available() > 0) {
-        esp8266->read();
-    }
-}
-
-bool Wifi::AT(void)
-{
-    rx_empty();
-    esp8266->println("AT");
-    return recvFind("OK", 2000);
-}
-
-bool Wifi::AT_CWJAP(String ssid, String pwd){
-    String data;
-    rx_empty();
-    esp8266->print("AT+CWJAP=\"");
-    esp8266->print(ssid);
-    esp8266->print("\",\"");
-    esp8266->print(pwd);
-    esp8266->println("\"");
-    
-    data = recvString("OK", "FAIL", 1800000);
-    return data.indexOf("OK") != -1;
-
-}
-
-bool Wifi::AT_CIFSR(String &list)
-{
-    rx_empty();
-    esp8266->println("AT+CIFSR");
-    return recvFindAndFilter("OK", "\r\r\n", "\r\n\r\nOK", list);
-}
-
-bool Wifi::AT_CIPMUX(uint8_t mode){
-    String data;
-    rx_empty();
-    esp8266->print("AT+CIPMUX=");
-    esp8266->println(String(mode));
-    
-    data = recvString("OK", "Link is builded");
-    if (data.indexOf("OK") != -1) {
-        return true;
-    }
-    return false;
-}
-
-bool Wifi::AT_CIPSTART(String type, String host, int port)
-{
-    String data;
-    rx_empty();
-    esp8266->print("AT+CIPSTART=\"");
-    esp8266->print(type);
-    esp8266->print("\",\"");
-    esp8266->print(host);
-    esp8266->print("\",");
-    esp8266->println(port);
-    
-    data = recvString("OK", "ERROR", "ALREADY CONNECT", 10000);
-    Serial.println("***");
-    Serial.println(data);
-    Serial.println("***");
-    if (data.indexOf("OK") != -1 || data.indexOf("ALREADY CONNECT") != -1) {
-        return true;
-    }
-    return false;
-}
-
-bool Wifi::AT_CIPCLOSE(void){
-    rx_empty();
-    esp8266->println("AT+CIPCLOSE");
-    return recvFind("OK", 10000);
-}
-
-bool Wifi::AT_CIPSEND(const uint8_t *buffer, uint32_t len){
-    rx_empty();
-    esp8266->print("AT+CIPSEND=");
-    esp8266->println(len);
-    if (recvFind(">", 10000)) {
-        rx_empty();
-        for (uint32_t i = 0; i < len; i++) {
-            esp8266->write(buffer[i]);
-        }
-        return recvFind("SEND OK", 10000);
-    }
-    return false;
-}
-
-bool Wifi::connect(String _ssid, String _pwd){
-  ssid = _ssid;
-  pwd = _pwd;
-
-  if(AT()){
-    Serial.println("AT OK");
-    while(!AT_CWJAP(ssid, pwd)){
-      Serial.println("Error trying to join in access point " + ssid  +" try again...");
-      delay(2000);
-    }
-    Serial.println("Connected in accesspoint: " + ssid);
-    AT_CIFSR(ipMac);
-    Serial.println("IP/MAC: " + ipMac);
-    AT_CIPMUX(0);
-    status = 1;
-  }else{
-    Serial.println("Error on connect with Esp8266");
+  Serial.print("Connecting");
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
   }
+  Serial.println();
+
+  Serial.print("Connected, IP address: ");
+  Serial.println(WiFi.localIP());
+  delay(10000);
+  if (conn.connect(server_addr, 3306, user, password)) {
+    delay(1000);
+    Serial.println("MySQL Connected."); 
+  }
+  else
+    Serial.println("Connection failed.");  
 }
 
-void Wifi::keepConnected(){
-   switch(status)
-   {
-      case 0:
-      if(connect(ssid, pwd)){
-         status = 1;
-      }else{
-         Serial.println("Not connected");
+
+void loop() {
+  delay(2000);
+  //strcpy (query, "select CASE WHEN a.pin is null THEN 0 ELSE 1 END AS pin FROM  arduino.customer_login b left join arduino.registos a on a.pin = b.pin AND b.date_in between a.start_date and a.end_date WHERE b.new = 1 LIMIT 1");
+  Serial.println("\nVerify new QR Code!!!\n");
+
+  // Initiate pin variable
+  pin = 2;
+  // Initiate the query class instance
+  MySQL_Cursor *cur_mem = new MySQL_Cursor(&conn);
+  // Execute the query
+  cur_mem->execute(query);
+  // Fetch the columns and print them
+  column_names *cols = cur_mem->get_columns();
+  Serial.println();
+  // Read mysql value
+  row_values *row = NULL;
+  do {
+    row = cur_mem->get_next_row();
+    if (row != NULL) {
+      Serial.println(row->values[0]);
+      pin = atol(row->values[0]);
+      Serial.println(pin);
+      if (pin == 1) {        
+        digitalWrite(electronic_lock, HIGH);
+        Serial.print("Welcome, Door is opened!!!");
+        delay(5000);
+        digitalWrite(electronic_lock, LOW);
       }
-      break;
-   }
-}
+      else
+        Serial.print("Sorry!!! QR Code not valid!!!");
+      Serial.println();     
+    }
+  } while (row != NULL);
+  
+  // Deleting the cursor also frees up memory used
+  delete cur_mem;
 
-bool Wifi::closeTcpSocket(){
-   if(AT_CIPCLOSE()){
-      status = 1;
-      Serial.println("Connection closed successfully");
-      return true;
-   }else{
-      status = 1;
-      Serial.println("Connection closed with error");
-      return false;
-   }
-}
-
-bool Wifi::openTcpSocket(String host, int port){
-      if(AT_CIPSTART("TCP", host, port)){
-         status = 2;
-      }
-}
-
-bool Wifi::sendTcpData(char *hello){
-     if(AT_CIPSEND((const uint8_t*)hello, strlen(hello))){
-        Serial.println("Sended tcp data");
-     }else{
-        Serial.println("error in send tcp data");
-        Serial.println("Not connected. Use openTcpSocket(host, port) before");
-     }
-}
-
-bool Wifi::httpGET(String host, int port, String query){
-   openTcpSocket(host, port);
-   char *data;
-   String httpQuery = "GET "+query+" HTTP/1.1\r\nHost: "+host+":"+String(port)+"\r\nConnection: close\r\n\r\n";
-   Serial.println(httpQuery);
-   httpQuery.toCharArray(data, httpQuery.length());
-   sendTcpData(data);
-   closeTcpSocket();
-}
-
-bool Wifi::isConnected(void){
-   return status == 1;
+  //Update MySQL QRcode login
+  if (pin != 2) {
+    // Initiate the query class instance
+    MySQL_Cursor *cur_mem = new MySQL_Cursor(&conn);
+    // Update
+    cur_mem->execute(queryUPD);
+    delete cur_mem;
+  }
 }
