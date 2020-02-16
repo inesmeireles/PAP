@@ -57,7 +57,7 @@
                 </tr>
                 <tr>
                   <th></th>
-                  <td><input type="button" onclick="location.href='http://localhost';" value="Home" /></td>
+                  <td><input class="form_button" type="button" onclick="location.href='http://localhost';" value="Home" /></td>
                 </tr>
               </table>
             <?php

@@ -2,11 +2,11 @@
 
 $servername = "localhost";
 $username = "arduino";
-$password = "";
+$password = "12345678";
 $dbname = "arduino";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
-// 
+//
 // mysqli_connect($servername, $username, $password, $dbname);
 
 if(!$conn)

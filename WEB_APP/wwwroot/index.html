@@ -9,18 +9,19 @@
     <title>Management</title>
   </head>
   <body>
+    <h1>MAIN MENU</h1>
     <table id="t01">
       <tr>
-        <TH>Option 1</TH>
-        <td><a target="_self" href="http://localhost/booking.php">Add new booking</a></td>
+        <td><input class="main_button" type="button" onclick="location.href='http://localhost/booking.php';" value="Add new booking" /></td>
       </tr>
       <tr>
-        <TH>Option 2</TH>
-        <td><a target="_self" href="http://localhost/reschedule.php">Reschedule checkin and checkout</a></td>
+        <td><input class="main_button" type="button" onclick="location.href='http://localhost/reschedule.php';" value="Reschedule checkin and checkout" /></td>
       </tr>
       <tr>
-        <TH>Option 3</TH>
-        <td><a target="_blank" target="_self" href="http://localhost/qr_read/index.php">Read QR Code by web cam</a></td>
+        <td><input class="main_button" type="button" onclick="location.href='http://localhost/userlogin.php';" value="User login list" /></td>
+      </tr>
+      <tr>
+        <td><input class="main_button" type="button" onclick="parent.open('http://localhost/qr_read/index.php');" value="Read QR Code by web cam" /></td>
       </tr>
     </table>
   </body>

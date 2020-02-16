@@ -2,7 +2,13 @@ body {
   background-color: powderblue;
 }
 h1 {
-  color: blue;
+  color: red;
+  text-shadow: 1px 1px 1px #000;
+  display: inline-block;
+  text-align:center;
+  width:50%;
+  margin-left:25%;
+  margin-right:25%;
 }
 p {
   color: red;
@@ -13,8 +19,70 @@ label {
   height:12;
   text-align:right;
 }
-table#t01 {  
-  width:70%;
-  margin-left:15%;
-  margin-right:15%;
+table#t01 {
+  width:50%;
+  margin-left:25%;
+  margin-right:25%;
+  align:left;
+}
+td {
+  text-align:center;
+}
+
+.main_button {
+    border: 0;
+    line-height: 2.5;
+    display: inline-block;
+    padding: 10px 40px;
+    width: 350px;
+    font-size: 1rem;
+    text-align: center;
+    color: #fff;
+    text-shadow: 1px 1px 1px #000;
+    border-radius: 10px;
+    background-color: rgba(220, 0, 0, 1);
+    background-image: linear- gradient(to top left,
+                                      rgba(0, 0, 0, .2),
+                                      rgba(0, 0, 0, .2) 30%,
+                                      rgba(0, 0, 0, 0));
+    box-shadow: inset 2px 2px 3px rgba(255, 255, 255, .6),
+                inset -2px -2px 3px rgba(0, 0, 0, .6);
+}
+
+.main_button:hover {
+    background-color: rgba(255, 0, 0, 1);
+}
+
+.main_button:active {
+    box-shadow: inset -2px -2px 3px rgba(255, 255, 255, .6),
+                inset 2px 2px 3px rgba(0, 0, 0, .6);
+}
+
+.form_button {
+    border: 0;
+    line-height: 2.5;
+    display: inline-block;
+    padding: 0px 10px;
+    width: 60px;
+    font-size: 1rem;
+    text-align: center;
+    color: #fff;
+    text-shadow: 1px 1px 1px #000;
+    border-radius: 10px;
+    background-color: rgba(220, 0, 0, 1);
+    background-image: linear- gradient(to top left,
+                                      rgba(0, 0, 0, .2),
+                                      rgba(0, 0, 0, .2) 30%,
+                                      rgba(0, 0, 0, 0));
+    box-shadow: inset 2px 2px 3px rgba(255, 255, 255, .6),
+                inset -2px -2px 3px rgba(0, 0, 0, .6);
+}
+
+.form_button:hover {
+    background-color: rgba(255, 0, 0, 1);
+}
+
+.form_button:active {
+    box-shadow: inset -2px -2px 3px rgba(255, 255, 255, .6),
+                inset 2px 2px 3px rgba(0, 0, 0, .6);
 }

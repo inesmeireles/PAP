@@ -9,7 +9,7 @@
     <title>Booking</title>
   </head>
   <body>
-
+    <h1>NEW BOOKING</h1>
     <?php
       include('dbConfig.php');
       if(isset($_POST['save']))
@@ -47,7 +47,7 @@
         </tr>
         <tr>
           <td></td>
-          <td><button type="submit" name="save">save</button><input type="button" onclick="location.href='http://localhost';" value="Home" /></td>
+          <td><button class="form_button" type="submit" name="save">save</button><input class="form_button" type="button" onclick="location.href='http://localhost';" value="Home" /></td>
         </tr>
       </table>
     </form>

@@ -63,7 +63,7 @@
 								</tr>
 								<tr>
                 	<th></th>
-									<td><button id = "save" type="submit" name="save">save</button><input type="button" onclick="location.href='http://localhost';" value="Home" /></td>
+									<td><button class="form_button" id = "save" type="submit" name="save">save</button><input class="form_button" type="button" onclick="location.href='http://localhost';" value="Home" /></td>
 
 								</tr>
             </form>
