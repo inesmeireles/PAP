@@ -1,20 +1,20 @@
-// Made by Rupak Poddar
+ // Made by Rupak Poddar
 // Watch my videos on- www.youtube.com/RupakPoddar
 
 /* PINOUT
  *  Fingerprint Sensor      Arduino
  *  Vcc(red)----------------> 5v
  *  Gnd(Black)--------------> Gnd
- *  Tx(green)---------------> Pin 2
- *  Rx(white)---------------> Pin 3
+ *  Tx(yellow)---------------> Pin 10
+ *  Rx(white)---------------> Pin 11
  */
 
  // Connect the Door Lock on digital pin 12
  
 #include <Adafruit_Fingerprint.h>
 int electronic_lock = 12; 
-// pin #2 is IN from sensor (GREEN wire)
-// pin #3 is OUT from arduino  (WHITE wire)
+// pin #10 is IN from sensor (wellow wire)
+// pin #11 is OUT from arduino  (WHITE wire)
 SoftwareSerial mySerial(10, 11);// Tx, Rx
 
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
