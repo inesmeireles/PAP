@@ -37,6 +37,7 @@ Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS)
 LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 //rfid configuration
+boolean RFIDMode = true; // boolean to change modes
 #define SS_PIN 53
 #define RST_PIN 5
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
@@ -97,6 +98,13 @@ void rfid_function(){
   }  
 }
 
+void clearData(){
+  while(data_count !=0){
+    Data[data_count--] = 0;
+  }
+  return;
+}
+
 void keypad_function(){
   lcd.setCursor(3,0);
   lcd.print("Enter Password:");
@@ -127,24 +135,29 @@ void keypad_function(){
         Serial.print("Incorrect");
         delay(1000);
         }
-     
+
+      SPI.begin();          // Inicia  SPI bus
+      mfrc522.PCD_Init();   // Inicia MFRC522 
+      RFIDMode = true; //altera o modo
       lcd.clear();
-      clearData();  
+      clearData(); 
+      return; 
     }  
-  }
+  }  
 }
 
 void loop(){
-  rfid_function();
-  customKey = customKeypad.getKey();
-  //if (customKey){
-  //  keypad_function();
-  //}    
-}
-
-void clearData(){
-  while(data_count !=0){
-    Data[data_count--] = 0;
+  if (RFIDMode == true) {
+    rfid_function();
+    RFIDMode = false; //altera o modo
   }
-  return;
+  else if (RFIDMode == false) {
+    customKey = customKeypad.getKey();
+    if (customKey){
+      keypad_function();
+    }
+    SPI.begin();          // Inicia  SPI bus
+    mfrc522.PCD_Init();   // Inicia MFRC522    
+    RFIDMode = true; //altera o modo
+  }    
 }
