@@ -9,6 +9,10 @@
 
 #define Password_Length 5
 
+byte data; //Initialized variable to store received data
+
+static const char xyz[] PROGMEM = "This is a string stored in flash";
+
 //rele
 int signalPin = 13;
 
@@ -42,8 +46,13 @@ boolean RFIDMode = true; // boolean to change modes
 #define RST_PIN 5
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 
+//QR Code
+boolean qrcode = true;
+
 void setup(){
-  Serial.begin(9600);
+  Serial.begin(115200);
+  Serial1.begin(115200);
+
   pinMode(signalPin, OUTPUT);
   //Protocol Configuration
   lcd.init();
@@ -51,6 +60,36 @@ void setup(){
   //RFID
   SPI.begin();          // Inicia  SPI bus
   mfrc522.PCD_Init();   // Inicia MFRC522
+}
+
+void qrcode_function(){
+  int i=0;
+  String str;
+
+  if (Serial.available() > 0) 
+  {
+    byte index = 0; // Index into array; where to store the character     
+    char inChar = Serial.read();
+    if(index < 19) // One less than the size of the array
+    {
+        str = Serial.readStringUntil('\n');
+        i = Serial.parseInt();
+    }
+  }
+  //Serial.print(i);
+  if (i == 9)
+  {
+    Serial.println("lock opened");
+    Serial.println();
+    digitalWrite(signalPin, HIGH);
+    delay(5000);
+    digitalWrite(signalPin, LOW);
+  }
+  if (i == 7)
+  {
+    Serial.println("QR Code invalido");
+    Serial.println();
+  }  
 }
 
 void rfid_function(){
@@ -147,17 +186,24 @@ void keypad_function(){
 }
 
 void loop(){
-  if (RFIDMode == true) {
-    rfid_function();
-    RFIDMode = false; //altera o modo
+  if (qrcode == true) {
+    qrcode_function();
+    qrcode = false;
   }
-  else if (RFIDMode == false) {
-    customKey = customKeypad.getKey();
-    if (customKey){
-      keypad_function();
+  else if (qrcode == false) {
+    if (RFIDMode == true) {
+      rfid_function();
+      RFIDMode = false; //altera o modo
     }
-    SPI.begin();          // Inicia  SPI bus
-    mfrc522.PCD_Init();   // Inicia MFRC522    
-    RFIDMode = true; //altera o modo
-  }    
+    else if (RFIDMode == false) {
+      customKey = customKeypad.getKey();
+      if (customKey){
+        keypad_function();
+      }
+      SPI.begin();          // Inicia  SPI bus
+      mfrc522.PCD_Init();   // Inicia MFRC522    
+      RFIDMode = true; //altera o modo
+    }
+    qrcode = true;
+  }
 }
