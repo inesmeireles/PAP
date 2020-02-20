@@ -22,6 +22,7 @@ char Master[Password_Length] = "1234";
 byte data_count = 0, master_count = 0;
 bool Pass_is_good;
 char customKey;
+boolean key_pad = true;
 
 const byte ROWS = 4;
 const byte COLS = 3;
@@ -60,6 +61,7 @@ void setup(){
   //RFID
   SPI.begin();          // Inicia  SPI bus
   mfrc522.PCD_Init();   // Inicia MFRC522
+  digitalWrite(signalPin, LOW);
 }
 
 void qrcode_function(){
@@ -186,24 +188,25 @@ void keypad_function(){
 }
 
 void loop(){
+  if (key_pad == true) {
+    customKey = customKeypad.getKey();
+    if (customKey){
+      keypad_function();
+    }
+    SPI.begin();          // Inicia  SPI bus
+    mfrc522.PCD_Init();   // Inicia MFRC522    
+    key_pad = false; //altera o modo   
+    RFIDMode = true; 
+  }  
   if (qrcode == true) {
     qrcode_function();
     qrcode = false;
+    key_pad = true;
   }
-  else if (qrcode == false) {
-    if (RFIDMode == true) {
-      rfid_function();
-      RFIDMode = false; //altera o modo
-    }
-    else if (RFIDMode == false) {
-      customKey = customKeypad.getKey();
-      if (customKey){
-        keypad_function();
-      }
-      SPI.begin();          // Inicia  SPI bus
-      mfrc522.PCD_Init();   // Inicia MFRC522    
-      RFIDMode = true; //altera o modo
-    }
-    qrcode = true;
+  if (RFIDMode == true) {
+    rfid_function();
+    RFIDMode = false; //altera o modo
+    qrcode=true;
+    key_pad=true;
   }
 }
