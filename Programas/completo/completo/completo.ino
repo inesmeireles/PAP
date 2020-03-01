@@ -9,9 +9,9 @@
 //Finger print
 #include <Adafruit_Fingerprint.h>
 
-#define Password_Length 5
+#define Password_Length 6 //são 5 carateres mas temos de carregar em # para ativar o keypad
 
-byte data; //Initialized variable to store received data
+byte data; //Inicialização da variavel para ler o array dos dados enviados por serie do WIFI (recebe dados)
 
 static const char xyz[] PROGMEM = "This is a string stored in flash";
 
@@ -27,7 +27,7 @@ int signalPin = 13;
 
 //keypad configuration
 char Data[Password_Length];
-char Master[Password_Length] = "1234";
+char Master[Password_Length] = "12345";
 byte data_count = 0, master_count = 0;
 bool Pass_is_good;
 char customKey;
@@ -43,11 +43,12 @@ char hexaKeys[ROWS][COLS] = {
   {'*','0','#'}
 };
 
-byte colPins[COLS] = {5, 4, 3}; //connect col pins
-byte rowPins[ROWS] = {9, 8, 7, 6}; //connect row pins
+byte colPins[COLS] = {5, 4, 3}; //pinos das colunas conectados na placa
+byte rowPins[ROWS] = {9, 8, 7, 6}; //pinos das linhas conectados na placa
 
 Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
+//display
 LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 //rfid configuration
@@ -60,10 +61,10 @@ MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 boolean qrcode = true;
 
 void setup(){
-  Serial.begin(115200);
-  Serial1.begin(115200);
+  Serial.begin(115200); //frequencia de trabalho dos componentes do projeto /keypad, rfid, lcd, monitor, etc.
+  Serial1.begin(115200); //frequencia de transmissão entre o wifi modulo e o arduino
 
-  while (!Serial);
+  while (!Serial); //loop para carregar todas as comunicações serie
   delay(100);  
 
   pinMode(signalPin, OUTPUT);
@@ -76,7 +77,7 @@ void setup(){
   digitalWrite(signalPin, LOW);
 
   // set the data rate for the sensor serial port
-  finger.begin(57600);  
+  finger.begin(57600); //frequencia especifica para transmitir dados com a impresssao digital 
   
   if (finger.verifyPassword()) {
     Serial.println("Found fingerprint sensor");
@@ -101,6 +102,11 @@ int fingerprint_function() {
   p = finger.fingerFastSearch();
   if (p != FINGERPRINT_OK) {
     Serial.println("Try again...");
+    lcd.clear();
+    lcd.print("Leitura invalida,");
+    lcd.setCursor(0,1);
+    lcd.print("tente de novo...");  
+    delay(2000);    
     return -1;
   }
   
@@ -108,6 +114,10 @@ int fingerprint_function() {
   Serial.print("Found ID #"); Serial.print(finger.fingerID); 
   Serial.print(" with confidence of "); Serial.println(finger.confidence);
   digitalWrite(signalPin, HIGH);
+  lcd.clear();
+  lcd.print("Bem vindo, chefe");
+  lcd.setCursor(0,1);
+  lcd.print("boa visita...");  
   delay(5000);                        //Change the door lock delay from here
   digitalWrite(signalPin, LOW);
   Serial.println("Unlocked");
@@ -131,6 +141,10 @@ void qrcode_function(){
   //Serial.print(i);
   if (i == 9)
   {
+    lcd.clear();
+    lcd.print("Bem vindo,");
+    lcd.setCursor(0,1);
+    lcd.print("boa estadia...");      
     Serial.println("lock opened");
     Serial.println();
     digitalWrite(signalPin, HIGH);
@@ -139,20 +153,25 @@ void qrcode_function(){
   }
   if (i == 7)
   {
+    lcd.clear();
+    lcd.print("QR Code invalido,");
+    lcd.setCursor(0,1);
+    lcd.print("Verifique reserva...");      
     Serial.println("QR Code invalido");
     Serial.println();
+    delay(5000);
   }  
 }
 
 void rfid_function(){
   // Look for new cards
   if ( ! mfrc522.PICC_IsNewCardPresent()) 
-  {
+  {   
     return;
   }
   // Select one of the cards
   if ( ! mfrc522.PICC_ReadCardSerial()) 
-  {
+  {   
     return;
   }
   //Mostra UID na serial
@@ -174,6 +193,11 @@ void rfid_function(){
     Serial.println("lock opened");
     Serial.println();
     digitalWrite(signalPin, HIGH);
+    lcd.clear();
+    lcd.print("Ola Patricia,");
+    lcd.setCursor(0,1);
+    lcd.print("bom trabalho...");   
+    Serial.write("3");
     delay(5000);
     digitalWrite(signalPin, LOW);
   }
@@ -184,6 +208,11 @@ void rfid_function(){
     Serial.println("lock opened");
     Serial.println();
     digitalWrite(signalPin, HIGH);
+    lcd.clear();
+    lcd.print("Ola Marta,");
+    lcd.setCursor(0,1);
+    lcd.print("bom trabalho...");    
+    Serial.write("4"); 
     delay(5000);
     digitalWrite(signalPin, LOW);
   }  
@@ -198,13 +227,17 @@ void clearData(){
 
 void keypad_function(){
   lcd.setCursor(3,0);
-  lcd.print("Enter Password:");
+  lcd.clear();
+  lcd.print("Introduza codigo:");
 
+  //Envia codigo para Modulo WIFI
+  Serial.write("#"); //envia inicio de codigo para o modulo wifi para validar na base de dados
   while(data_count != Password_Length-1){
     customKey = customKeypad.getKey();
     if (customKey){
       Serial.print ("Key pressed: ");
       Serial.println(customKey);
+      Serial.write(customKey); //envia numero para o WIFI
       Data[data_count] = customKey;
       lcd.setCursor(data_count,1);
       lcd.print(Data[data_count]);
@@ -214,15 +247,17 @@ void keypad_function(){
     if(data_count == Password_Length-1){
       lcd.clear();
   
-      if(!strcmp(Data, Master)){
-        lcd.print("Correct");
+      if(!strcmp(Data, Master)){        
+        lcd.print("Bem vindo,");
+        lcd.setCursor(0,1);
+        lcd.print("boa estadia...");
         Serial.print("Correct");
         digitalWrite(signalPin, HIGH);
         delay(5000);
         digitalWrite(signalPin, LOW);
         }
       else{
-        lcd.print("Incorrect");
+        lcd.print("Codigo invalido!!!");
         Serial.print("Incorrect");
         delay(1000);
         }
@@ -237,27 +272,39 @@ void keypad_function(){
   }  
 }
 
+void key_pad_ini() {
+  customKey = customKeypad.getKey();
+  if (customKey){ //verifica se foi carregada uma tecla qualquer
+    keypad_function();
+  }
+  SPI.begin();          // Inicia  SPI bus
+  mfrc522.PCD_Init();   // Inicia MFRC522    
+  key_pad = false; //altera o modo   
+  RFIDMode = true;   
+}
+
 void loop(){
+  lcd.clear();
+  lcd.print("Alojamento local!!!");
   if (key_pad == true) {
-    customKey = customKeypad.getKey();
-    if (customKey){
-      keypad_function();
-    }
-    SPI.begin();          // Inicia  SPI bus
-    mfrc522.PCD_Init();   // Inicia MFRC522    
-    key_pad = false; //altera o modo   
-    RFIDMode = true; 
+    key_pad_ini();
   }  
   if (qrcode == true) {
+    key_pad_ini();
     qrcode_function();
     qrcode = false;
     key_pad = true;
+    key_pad_ini();
   }
   if (RFIDMode == true) {
+    key_pad_ini();
     rfid_function();
     RFIDMode = false; //altera o modo
     qrcode=true;
     key_pad=true;
+    key_pad_ini();
   }  
+  key_pad_ini();
   fingerprint_function();
+  key_pad_ini();
 }

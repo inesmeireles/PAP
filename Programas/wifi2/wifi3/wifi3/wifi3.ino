@@ -6,7 +6,7 @@
 
 byte mac_addr[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 
-IPAddress server_addr(192, 168, 1, 73); // IP of the MySQL *server* here
+IPAddress server_addr(192, 168, 1, 90); // IP of the MySQL *server* here
 char user[] = "arduino";              // MySQL user login username
 char password[] = "12345678";        // MySQL user login password
 int pin = 2;
@@ -83,4 +83,57 @@ void loop() {
     cur_mem->execute(queryUPD);
     delete cur_mem;
   }
+
+  empregadas();
+  //clientes();
+}
+
+void clientes() {
+  int i=0;
+  String str;
+
+  if (Serial.available() > 0) 
+  {
+    byte index = 0; // Index into array; where to store the character     
+    char inChar = Serial.read();
+    if(index < 19) // One less than the size of the array
+    {
+        str = Serial.readStringUntil('\n');
+        i = Serial.parseInt();
+    }
+  }  
+}
+
+void empregadas() {
+  int i=0;
+  String str;
+
+  if (Serial.available() > 0) 
+  {
+    byte index = 0; // Index into array; where to store the character     
+    char inChar = Serial.read();
+    if(index < 19) // One less than the size of the array
+    {
+        str = Serial.readStringUntil('\n');
+        i = Serial.parseInt();
+    }
+  }
+  //Serial.print(i);
+  if (i == 3) {
+    char emp[] = "INSERT INTO arduino.user_login VALUES ('2B 82 22 1B',CURRENT_TIMESTAMP,'Patricia')";
+    // Initiate the query class instance
+    MySQL_Cursor *cur_mem = new MySQL_Cursor(&conn);
+    // Update
+    cur_mem->execute(emp);
+    delete cur_mem;    
+  }
+  //Serial.print(i);
+  if (i == 4) {
+    char emp[] = "INSERT INTO arduino.user_login VALUES ('27 9B 01 3C',CURRENT_TIMESTAMP,'Marta')";
+    // Initiate the query class instance
+    MySQL_Cursor *cur_mem = new MySQL_Cursor(&conn);
+    // Update
+    cur_mem->execute(emp);
+    delete cur_mem;    
+  }  
 }
