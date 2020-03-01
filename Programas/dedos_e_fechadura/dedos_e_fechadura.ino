@@ -12,7 +12,7 @@
  // Connect the Door Lock on digital pin 12
  
 #include <Adafruit_Fingerprint.h>
-int electronic_lock = 12; 
+int electronic_lock = 13; 
 // pin #10 is IN from sensor (wellow wire)
 // pin #11 is OUT from arduino  (WHITE wire)
 SoftwareSerial mySerial(10, 11);// Tx, Rx
@@ -21,7 +21,7 @@ Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
 void setup()  
 {
-  pinMode(12, OUTPUT);
+  pinMode(electronic_lock, OUTPUT);
   Serial.begin(9600);
   while (!Serial);
   delay(100);

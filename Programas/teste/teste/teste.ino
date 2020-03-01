@@ -1,20 +1,53 @@
-// Programa : Display LCD 16x2 e modulo I2C
-// Autor : Arduino e Cia
 #include <Wire.h>
-#include <LiquidCrystal_I2C.h>
-// Inicializa o display no endereco 0x27
-LiquidCrystal_I2C lcd(0x27,16,2); 
-void setup(){ 
-  lcd.begin (16,2);
-  lcd.clear();
-} 
-void loop(){  
-  lcd.setBacklight(HIGH);  
-  lcd.setCursor(0,0);  
-  lcd.print("Arduino e Cia !!");  
-  lcd.setCursor(0,1);  
-  lcd.print("LCD e modulo I2C");  
-  delay(1000);  
-  lcd.setBacklight(LOW);  
-  delay(1000);
+
+void setup()
+{
+  Wire.begin();
+ 
+  Serial.begin(9600);
+  while (!Serial);             // Leonardo: wait for serial monitor
+  Serial.println("\nI2C Scanner");
+}
+ 
+ 
+void loop()
+{
+  byte error, address;
+  int nDevices;
+ 
+  Serial.println("Scanning...");
+ 
+  nDevices = 0;
+  for(address = 1; address < 127; address++ )
+  {
+    // The i2c_scanner uses the return value of
+    // the Write.endTransmisstion to see if
+    // a device did acknowledge to the address.
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+ 
+    if (error == 0)
+    {
+      Serial.print("I2C device found at address 0x");
+      if (address<16)
+        Serial.print("0");
+      Serial.print(address,HEX);
+      Serial.println("  !");
+ 
+      nDevices++;
+    }
+    else if (error==4)
+    {
+      Serial.print("Unknown error at address 0x");
+      if (address<16)
+        Serial.print("0");
+      Serial.println(address,HEX);
+    }    
+  }
+  if (nDevices == 0)
+    Serial.println("No I2C devices found\n");
+  else
+    Serial.println("done\n");
+ 
+  delay(5000);           // wait 5 seconds for next scan
 }
