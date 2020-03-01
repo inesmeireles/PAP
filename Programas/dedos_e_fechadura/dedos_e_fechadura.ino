@@ -30,7 +30,10 @@ void setup()
   
   if (finger.verifyPassword()) {
     Serial.println("Found fingerprint sensor");
-  } else {
+  }
+  else 
+  {
+  
     Serial.println("Did not find fingerprint sensor");
     while (1) { delay(1); }
   }
