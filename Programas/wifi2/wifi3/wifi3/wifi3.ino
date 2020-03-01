@@ -6,7 +6,7 @@
 
 byte mac_addr[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 
-IPAddress server_addr(192, 168, 1, 204); // IP of the MySQL *server* here
+IPAddress server_addr(192, 168, 1, 73); // IP of the MySQL *server* here
 char user[] = "arduino";              // MySQL user login username
 char password[] = "12345678";        // MySQL user login password
 int pin = 2;
@@ -23,8 +23,8 @@ void setup()
   Serial.begin(115200);
   Serial.println();
 
-  //WiFi.begin("Casa_Santa_Teresinha", "teresinha"); //Seixas
-  WiFi.begin("Vodafone-DE3AFC", "95J4VrbAUA"); //Codessos
+  WiFi.begin("Casa_Santa_Teresinha", "teresinha"); //Seixas
+  //WiFi.begin("Vodafone-DE3AFC", "95J4VrbAUA"); //Codessos
 
   Serial.print("Connecting");
   while (WiFi.status() != WL_CONNECTED)

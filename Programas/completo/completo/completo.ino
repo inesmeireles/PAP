@@ -6,12 +6,21 @@
 //RFID
 #include <SPI.h>
 #include <MFRC522.h>
+//Finger print
+#include <Adafruit_Fingerprint.h>
 
 #define Password_Length 5
 
 byte data; //Initialized variable to store received data
 
 static const char xyz[] PROGMEM = "This is a string stored in flash";
+
+//Finger print config
+// pin #10 is IN from sensor (Yellow wire)
+// pin #11 is OUT from arduino  (WHITE wire)
+SoftwareSerial mySerial(10, 11);// Tx, Rx
+
+Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 
 //rele
 int signalPin = 13;
@@ -54,6 +63,9 @@ void setup(){
   Serial.begin(115200);
   Serial1.begin(115200);
 
+  while (!Serial);
+  delay(100);  
+
   pinMode(signalPin, OUTPUT);
   //Protocol Configuration
   lcd.init();
@@ -62,6 +74,44 @@ void setup(){
   SPI.begin();          // Inicia  SPI bus
   mfrc522.PCD_Init();   // Inicia MFRC522
   digitalWrite(signalPin, LOW);
+
+  // set the data rate for the sensor serial port
+  finger.begin(57600);  
+  
+  if (finger.verifyPassword()) {
+    Serial.println("Found fingerprint sensor");
+  } else {
+    Serial.println("Did not find fingerprint sensor");
+    while (1) { delay(1); }
+  }
+
+  finger.getTemplateCount();
+  Serial.print("Sensor contains "); Serial.print(finger.templateCount); Serial.println(" template(s)");
+  Serial.println("Waiting for valid finger..."); 
+}
+
+int fingerprint_function() {
+  uint8_t p = finger.getImage();
+  if (p != FINGERPRINT_OK)
+    return -1;
+
+  p = finger.image2Tz();
+  if (p != FINGERPRINT_OK)  return -1;
+
+  p = finger.fingerFastSearch();
+  if (p != FINGERPRINT_OK) {
+    Serial.println("Try again...");
+    return -1;
+  }
+  
+  // found a match!
+  Serial.print("Found ID #"); Serial.print(finger.fingerID); 
+  Serial.print(" with confidence of "); Serial.println(finger.confidence);
+  digitalWrite(signalPin, HIGH);
+  delay(5000);                        //Change the door lock delay from here
+  digitalWrite(signalPin, LOW);
+  Serial.println("Unlocked");
+  return finger.fingerID;   
 }
 
 void qrcode_function(){
@@ -208,5 +258,6 @@ void loop(){
     RFIDMode = false; //altera o modo
     qrcode=true;
     key_pad=true;
-  }
+  }  
+  fingerprint_function();
 }
